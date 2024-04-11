@@ -15,9 +15,9 @@ Interface:
   #If serial, use "serial", elif ethernet, "udp"
   connection_type: "udp"
 
-  udp_address: "192.168.2.105"
+  udp_address: "192.168.2.2"
 
-  udp_port: 12345
+  udp_port: 9092  
 ###################################################################
 ###################### Sonar Configuration ########################
 ###################################################################
@@ -33,7 +33,7 @@ Configuration:
 
   # Note: Sonar max range [m], from 1 to 50
   # Default: 2
-  range: 2
+  range: 30
 
   # Note: Sonar angular resolution [degrees], from 1 to 20.
   # Default: 1
@@ -57,7 +57,7 @@ Sector:
   custom_mode:
     enabled: true
     angle_min: 0
-    angle_max: 270
+    angle_max: 90
     # The transducer reads from 0->angle_max->angle_min.
     # Set slice to true, if you want to restrict the angle_min to min_angle after the first reading. 
     # (Useful for scans that doesn't require 0 angle reading)
@@ -70,7 +70,7 @@ Sector:
 
 Driver:
   # Note: frame_id in ROS messages
-  frame_id: ping360_link
+  frame_id: map
 
   # Note: Publish images on Sensors_msgs/Image
   # Default: true
@@ -105,7 +105,8 @@ Driver:
     # Hyperparameter for intensity consideration. (mean + std_dev_multiplier * std_dev )
     std_dev_multiplier: 1.8
     # Hyperparameter for distance consideration (All points within radius distance are dropped)
-    radius: 2
+    radius: 30
+
 ##################################################################
 ############################ Just Test ###########################
 ##################################################################
