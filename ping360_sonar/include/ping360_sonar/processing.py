@@ -12,12 +12,12 @@ from math import nan
 class Processing:
     def __init__(self) -> None:
         # Subscribe to the PointCloud2 topic
-        rospy.Subscriber("/msis", PointCloud2, self.pointcloud_callback)
+        rospy.Subscriber("/narrow_stereo/points_filtered2", PointCloud2, self.pointcloud_callback)
         self.pcl_pub = rospy.Publisher("/filtered_msis", PointCloud2, queue_size=1)
         
         self.publish = rospy.get_param("/ping360_sonar_node/Driver/filtered_pointcloud/publish", True)
         self.std_dev_multiplier = rospy.get_param("/ping360_sonar_node/Driver/filtered_pointcloud/std_dev_multiplier", 2.0)
-        self.pub_topic = rospy.get_param("/ping360_sonar_node/Driver/filtered_pointcloud/pub_topic", "/alpha_rise/msis/pointcloud/filtered")
+        #self.pub_topic = rospy.get_param("/ping360_sonar_node/Driver/filtered_pointcloud/pub_topic", "/alpha_rise/msis/pointcloud/filtered")
         self.radius = rospy.get_param("/ping360_sonar_node/Driver/filtered_pointcloud/radius", 2)
     
     def pointcloud_callback(self, pointcloud_msg):
@@ -39,11 +39,11 @@ class Processing:
             # Populate filtered pointclouds.
             points = np.zeros((pcl_msg.width,len(pcl_msg.fields)),dtype=np.float32)
             for index,point in enumerate(pc2.read_points(pointcloud_msg, skip_nans=True)):
-                if index >= self.radius * 60:
+                if index >= (1200* 0.75)/self.radius :
                     ##Total bins = 1200. Set range = 20m. 1m = 60bins.
                     x, y, z, i = point[:4]
                     #Filter
-                    if i > mean+self.std_dev_multiplier *std_dev:              
+                    if i > 100:              
                         points[index][0] = x
                         points[index][1] = y
                         points[index][3] = i
@@ -52,10 +52,9 @@ class Processing:
                         points[index][1] = nan
                         points[index][3] = nan
                 else:
-                    points[index][0] = nan
-                    points[index][1] = nan
-                    points[index][3] = nan
-            
+                   points[index][0] = nan
+                   points[index][1] = nan
+                   points[index][3] = nan
             pcl_msg.data = points.tobytes()
             self.pcl_pub.publish(pcl_msg)
 
