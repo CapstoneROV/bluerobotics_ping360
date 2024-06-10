@@ -15,9 +15,9 @@ Interface:
   #If serial, use "serial", elif ethernet, "udp"
   connection_type: "udp"
 
-  udp_address: "192.168.2.2"
+  udp_address: "192.168.2.4"
 
-  udp_port: 9092  
+  udp_port: 12345
 ###################################################################
 ###################### Sonar Configuration ########################
 ###################################################################
@@ -57,7 +57,7 @@ Sector:
   custom_mode:
     enabled: true
     angle_min: 0
-    angle_max: 90
+    angle_max: 180
     # The transducer reads from 0->angle_max->angle_min.
     # Set slice to true, if you want to restrict the angle_min to min_angle after the first reading. 
     # (Useful for scans that doesn't require 0 angle reading)
@@ -70,7 +70,7 @@ Sector:
 
 Driver:
   # Note: frame_id in ROS messages
-  frame_id: map
+  frame_id: ping360_link
 
   # Note: Publish images on Sensors_msgs/Image
   # Default: true

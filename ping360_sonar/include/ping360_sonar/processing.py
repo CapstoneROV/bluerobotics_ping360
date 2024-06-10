@@ -19,6 +19,7 @@ class Processing:
         self.std_dev_multiplier = rospy.get_param("/ping360_sonar_node/Driver/filtered_pointcloud/std_dev_multiplier", 2.0)
         #self.pub_topic = rospy.get_param("/ping360_sonar_node/Driver/filtered_pointcloud/pub_topic", "/alpha_rise/msis/pointcloud/filtered")
         self.radius = rospy.get_param("/ping360_sonar_node/Driver/filtered_pointcloud/radius", 2)
+        self.num_points = 50  
     
     def pointcloud_callback(self, pointcloud_msg):
         if self.publish:
@@ -28,33 +29,46 @@ class Processing:
             
             pcl_msg.fields = pointcloud_msg.fields
             pcl_msg.height = pointcloud_msg.height
-            pcl_msg.width = pointcloud_msg.width
+            pcl_msg.width = pointcloud_msg.width*self.num_points
             pcl_msg.point_step = pointcloud_msg.point_step
-            pcl_msg.row_step = pointcloud_msg.row_step
+            pcl_msg.row_step = pointcloud_msg.row_step*self.num_points
             pcl_msg.is_dense = pointcloud_msg.is_dense
 
 
             mean, std_dev, intensities = self.get_intensities(pointcloud_msg=pointcloud_msg)
-        
-            # Populate filtered pointclouds.
-            points = np.zeros((pcl_msg.width,len(pcl_msg.fields)),dtype=np.float32)
-            for index,point in enumerate(pc2.read_points(pointcloud_msg, skip_nans=True)):
-                if index >= (1200* 0.75)/self.radius :
-                    ##Total bins = 1200. Set range = 20m. 1m = 60bins.
-                    x, y, z, i = point[:4]
-                    #Filter
-                    if i > 100:              
-                        points[index][0] = x
-                        points[index][1] = y
-                        points[index][3] = i
+
+            points = np.zeros((pointcloud_msg.width*self.num_points, len(pcl_msg.fields)), dtype=np.float32)
+
+            # Filtering and duplicating points
+            for original_index, point in enumerate(pc2.read_points(pointcloud_msg, skip_nans=False)):
+                if original_index >= (1200 * 0.75) / self.radius:
+                    x, y, z, intensity = point[:4]
+                    if intensity > 130:
+                        # Generate linearly spaced z-values around the original z
+                        z_values = np.linspace(z + 0.5, z - 0.5, self.num_points)
+                        # Duplicate points with adjusted z-values
+                        for j, z_new in enumerate(z_values):
+                            index = original_index * self.num_points + j
+                            points[index][0] = x
+                            points[index][1] = y
+                            points[index][2] = z_new
+                            points[index][3] = intensity
                     else:
+                        for j in range(self.num_points):
+                            index = original_index * self.num_points + j
+                            points[index][0] = nan
+                            points[index][1] = nan
+                            points[index][2] = nan
+                            points[index][3] = nan
+                else:
+                    for j in range(self.num_points):
+                        index = original_index * self.num_points + j
                         points[index][0] = nan
                         points[index][1] = nan
+                        points[index][2] = nan
                         points[index][3] = nan
-                else:
-                   points[index][0] = nan
-                   points[index][1] = nan
-                   points[index][3] = nan
+
+            # Convert the numpy array to bytes and set it as the data for the point cloud message
             pcl_msg.data = points.tobytes()
             self.pcl_pub.publish(pcl_msg)
 
